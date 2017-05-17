@@ -10,14 +10,14 @@ class RedisStore extends Store
     /**
      * Retrieve an item from the cache by key.
      *
-     * @param  string|array  $key
+     * @param  string|array $key
      * @return mixed
      */
     public function get($key)
     {
-        $value = $this->connection()->get($this->prefix.$key);
+        $value = $this->connection()->get($this->prefix . $key);
 
-        if (! is_null($value) && $value !== false) {
+        if (!is_null($value) && $value !== false) {
             return is_numeric($value) ? $value : unserialize($value);
         }
     }
@@ -25,7 +25,7 @@ class RedisStore extends Store
     /**
      * Begin executing a new tags operation.
      *
-     * @param  array|mixed  $names
+     * @param  array|mixed $names
      * @return \TillKruss\LaravelPhpRedis\RedisTaggedCache
      */
     public function tags($names)

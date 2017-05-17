@@ -9,30 +9,42 @@ trait RepositoryTrait
     /**
      * Determine if an item exists in the cache.
      *
-     * @param  string  $key
+     * @param  string $key
      * @return bool
      */
     public function has($key)
     {
         $value = $this->get($key);
 
-        return ! is_null($value) && $value !== false;
+        return !is_null($value) && $value !== false;
     }
 
     /**
      * Retrieve an item from the cache by key.
      *
-     * @param  string  $key
-     * @param  mixed   $default
+     * @param  string $key
+     * @param  mixed  $default
      * @return mixed
+     * @throws \Exception
      */
     public function get($key, $default = null)
     {
         if (is_array($key)) {
             return $this->many($key);
         }
-
-        $value = $this->store->get($this->itemKey($key));
+        $value = null;
+        try {
+            $value = $this->store->get($this->itemKey($key));
+        } catch (\Exception $exception) {
+            $message = $exception->getMessage();
+            if (in_array($message, [
+                'read error on connection',
+            ])) {
+                $value = $this->store->get($this->itemKey($key));
+            } else {
+                throw $exception;
+            }
+        }
 
         if (is_null($value) || $value === false) {
             $this->fireCacheEvent('missed', [$key]);
@@ -50,7 +62,7 @@ trait RepositoryTrait
      *
      * Items not found in the cache will have a null value.
      *
-     * @param  array  $keys
+     * @param  array $keys
      * @return array
      */
     public function many(array $keys)
@@ -79,9 +91,9 @@ trait RepositoryTrait
     /**
      * Store an item in the cache if the key does not exist.
      *
-     * @param  string  $key
-     * @param  mixed   $value
-     * @param  \DateTime|int  $minutes
+     * @param  string        $key
+     * @param  mixed         $value
+     * @param  \DateTime|int $minutes
      * @return bool
      */
     public function add($key, $value, $minutes)
@@ -110,9 +122,9 @@ trait RepositoryTrait
     /**
      * Get an item from the cache, or store the default value.
      *
-     * @param  string  $key
-     * @param  \DateTime|int  $minutes
-     * @param  \Closure  $callback
+     * @param  string        $key
+     * @param  \DateTime|int $minutes
+     * @param  \Closure      $callback
      * @return mixed
      */
     public function remember($key, $minutes, Closure $callback)
@@ -122,7 +134,7 @@ trait RepositoryTrait
         // If the item exists in the cache we will just return this immediately
         // otherwise we will execute the given Closure and cache the result
         // of that execution for the given number of minutes in storage.
-        if (! is_null($value) && $value !== false) {
+        if (!is_null($value) && $value !== false) {
             return $value;
         }
 
@@ -135,7 +147,7 @@ trait RepositoryTrait
      * Get an item from the cache, or store the default value forever.
      *
      * @param  string   $key
-     * @param  \Closure  $callback
+     * @param  \Closure $callback
      * @return mixed
      */
     public function rememberForever($key, Closure $callback)
@@ -145,7 +157,7 @@ trait RepositoryTrait
         // If the item exists in the cache we will just return this immediately
         // otherwise we will execute the given Closure and cache the result
         // of that execution for the given number of minutes. It's easy.
-        if (! is_null($value) && $value !== false) {
+        if (!is_null($value) && $value !== false) {
             return $value;
         }
 
