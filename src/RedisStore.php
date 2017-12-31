@@ -4,6 +4,7 @@ namespace TillKruss\LaravelPhpRedis;
 
 use Illuminate\Cache\TagSet;
 use Illuminate\Cache\RedisStore as Store;
+use Illuminate\Support\Facades\Log;
 
 class RedisStore extends Store
 {
@@ -12,10 +13,24 @@ class RedisStore extends Store
      *
      * @param  string|array $key
      * @return mixed
+     * @throws \Exception
      */
     public function get($key)
     {
-        $value = $this->connection()->get($this->prefix . $key);
+        $value = null;
+        try {
+            $value = $value = $this->connection()->get($this->prefix . $key);
+        } catch (\Exception $exception) {
+            $message = $exception->getMessage();
+            if (in_array($message, [
+                'read error on connection',
+            ])) {
+                Log::warning('phpredis ' . $message, compact('key'));
+                $value = $value = $this->connection()->get($this->prefix . $key);
+            } else {
+                throw $exception;
+            }
+        }
 
         if (!is_null($value) && $value !== false) {
             return is_numeric($value) ? $value : unserialize($value);

@@ -25,26 +25,13 @@ trait RepositoryTrait
      * @param  string $key
      * @param  mixed  $default
      * @return mixed
-     * @throws \Exception
      */
     public function get($key, $default = null)
     {
         if (is_array($key)) {
             return $this->many($key);
         }
-        $value = null;
-        try {
-            $value = $this->store->get($this->itemKey($key));
-        } catch (\Exception $exception) {
-            $message = $exception->getMessage();
-            if (in_array($message, [
-                'read error on connection',
-            ])) {
-                $value = $this->store->get($this->itemKey($key));
-            } else {
-                throw $exception;
-            }
-        }
+        $value = $this->store->get($this->itemKey($key));
 
         if (is_null($value) || $value === false) {
             $this->fireCacheEvent('missed', [$key]);
